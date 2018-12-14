@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="Pull2RefreshLayout">
+        <attr name="refreshHeader" format="string" />
+    </declare-styleable>
+
+</resources>
