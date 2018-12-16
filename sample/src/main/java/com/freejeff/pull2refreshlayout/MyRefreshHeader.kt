@@ -11,24 +11,26 @@ class MyRefreshHeader(context: Context): LinearLayout(context),IRefreshHeader {
     lateinit var tv:TextView
 
     override fun onPrepare() {
-        Log.d("TAG","onPrepare")
+        Log.d("STATE","onPrepare")
         tv.text = "Wait Refresh"
     }
 
     override fun onMove(currentY: Int, headerHeight: Int) {
-        Log.d("TAG","$currentY -- $headerHeight")
+//        Log.d("STATE","$currentY -- $headerHeight")
     }
 
     override fun onRefresh() {
-        Log.d("TAG","onRefresh")
+        Log.d("STATE","onRefresh")
         tv.text = "Refreshing"
     }
 
     override fun onRefreshFinish() {
+        Log.d("STATE","onRefreshFinish")
         tv.text = "refresh finish"
     }
 
     override fun onReset() {
+        Log.d("STATE","onReset")
         tv.text = "Wait Refresh"
     }
 
