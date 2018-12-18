@@ -20,12 +20,15 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
     private var mScroller: Scroller = Scroller(context)
     private var lastY: Int = 0
     var refreshListener: IRefreshListener? = null
-    private var isRefreshing = false
     var refreshState: RefreshState = RefreshState.INITIAL
+        set(state) {
+            field = state
+            Log.d("REFRESH_STATE", field.name)
+        }
 
 
     companion object {
-        const val DEFAULT_DAMP = 0.7f
+        const val DEFAULT_DAMP = 0.6f
     }
 
     constructor(context: Context) : super(context) {
@@ -104,10 +107,8 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
                 }
                 if (scrollY < 0 && Math.abs(scrollY) < refreshHeaderView.height) {
                     refreshState = RefreshState.PULLING
-                    Log.d("STATE", "PULLING")
                 } else if (Math.abs(scrollY) >= refreshHeaderView.height) {
                     refreshState = RefreshState.HOLDING
-                    Log.d("STATE", "HOLDING")
                 }
                 return true
             }
@@ -121,20 +122,15 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
                 if (destY >= 0) {
                     destY = 0
                 }
-//                else if (Math.abs(destY) > maxScrollHeight) {
-//                    destY = -maxScrollHeight.toInt()
-//                }
                 scrollTo(0, destY)
-                if (refreshState == RefreshState.INITIAL) {
+                if (refreshState != RefreshState.PULLING && destY < 0 && Math.abs(destY) < refreshHeaderView.height) {
+                    if (refreshState == RefreshState.INITIAL) {
+                        refreshHeader.onPrepare()
+                    }
                     refreshState = RefreshState.PULLING
-                    Log.d("STATE", "PULLIng")
-                    refreshHeader.onPrepare()
-                } else if (Math.abs(destY) < refreshHeaderView.height && refreshState != RefreshState.PULLING) {
-                    refreshState = RefreshState.PULLING
-                    Log.d("STATE", "PULLIng")
+
                 } else if (refreshState == RefreshState.PULLING && Math.abs(destY) >= refreshHeaderView.height) {
                     refreshState = RefreshState.HOLDING
-                    Log.d("STATE", "HOLDING")
                 }
                 lastY = event.y.toInt()
             }
@@ -143,13 +139,13 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
                 if (scrollY < 0) {
                     if (scrollY <= -refreshHeaderView.height && refreshState == RefreshState.HOLDING) {
                         refreshState = RefreshState.RELEASE_BACK
-                        Log.d("STATE", "RELEASE_BACK")
                         smoothScrollTo(-refreshHeaderView.height, 200)
                     } else {
-                        refreshState = RefreshState.RETURNING
-                        Log.d("STATE", "RETURNING")
                         smoothScrollBack()
                     }
+                } else if (refreshState == RefreshState.PULLING) {
+                    refreshState = RefreshState.INITIAL
+                    refreshHeader.onReset()
                 }
             }
 
@@ -175,7 +171,6 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
 
     private fun smoothScrollBack() {
         refreshState = RefreshState.RETURNING
-        Log.d("STATE", "RETURNING")
         smoothScrollTo(0, 800)
     }
 
@@ -186,9 +181,8 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
         refreshHeader.onMove(t, refreshHeaderView.height)
         if (t == -refreshHeaderView.height && refreshState == RefreshState.RELEASE_BACK) {
             doRefresh()
-        } else if (t == 0 && (refreshState == RefreshState.RETURNING || refreshState == RefreshState.PULLING)) {
+        } else if (t == 0 && (refreshState == RefreshState.RETURNING)) {
             refreshState = RefreshState.INITIAL
-            Log.d("STATE", "INITIAL")
             refreshHeader.onReset()
         }
     }
