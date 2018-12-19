@@ -64,14 +64,23 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        Log.d("TAG","onMeasure")
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        val headerWidthMeasureSpec = MeasureSpec.makeMeasureSpec(measuredWidth - paddingLeft - paddingRight, MeasureSpec.EXACTLY)
-        val headerheightMeasureSpec = MeasureSpec.makeMeasureSpec(measuredHeight - paddingTop - paddingBottom, MeasureSpec.AT_MOST)
-        refreshHeaderView.measure(headerWidthMeasureSpec, headerheightMeasureSpec)
-        targetView?.let {
-            measureChild(targetView, widthMeasureSpec, heightMeasureSpec)
+        val mTargetView = targetView
+        if(mTargetView!=null) {
+            measureChild(targetView,widthMeasureSpec,heightMeasureSpec)
+            if (MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.AT_MOST) {
+                setMeasuredDimension(mTargetView.measuredWidth,measuredHeight)
+            }
+            if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.AT_MOST) {
+                setMeasuredDimension(measuredWidth,mTargetView.measuredHeight)
+            }
         }
+        val headerWidthMeasureSpec = MeasureSpec.makeMeasureSpec(measuredWidth,MeasureSpec.EXACTLY)
+        val lp = refreshHeaderView.layoutParams
+        var headerHeightMeasureSpec = getChildMeasureSpec(heightMeasureSpec,0,lp.height)
+        headerHeightMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(headerHeightMeasureSpec),MeasureSpec.AT_MOST)
+        refreshHeaderView.measure(headerWidthMeasureSpec, headerHeightMeasureSpec)
+
     }
 
     override fun addView(child: View?, params: LayoutParams?) {
@@ -83,7 +92,7 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
 
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
-        Log.d("TAG","${refreshHeaderView.measuredHeight}")
+        Log.d("TAG", "${refreshHeaderView.measuredHeight}")
         refreshHeaderView.layout(
                 0,
                 -refreshHeaderView.measuredHeight,
@@ -134,7 +143,7 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
                 } else if (refreshState == RefreshState.PULLING && Math.abs(destY) >= refreshHeaderView.height) {
                     refreshState = RefreshState.HOLDING
                 }
-                refreshHeader.onMove(destY,refreshHeaderView.height)
+                refreshHeader.onMove(destY, refreshHeaderView.height)
                 lastY = event.y.toInt()
             }
 
