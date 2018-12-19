@@ -13,7 +13,8 @@ class DefaultRefreshHeader(context: Context): LinearLayout(context),IRefreshHead
     override fun onRefresh() {
     }
 
-    override fun onRefreshFinish() {
+    override fun onRefreshFinish():Long {
+        return 0
     }
 
     override fun onReset() {

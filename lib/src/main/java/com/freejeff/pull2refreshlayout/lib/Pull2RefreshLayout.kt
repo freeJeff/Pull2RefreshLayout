@@ -20,7 +20,7 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
     private var mScroller: Scroller = Scroller(context)
     private var lastY: Int = 0
     var refreshListener: IRefreshListener? = null
-    var refreshState: RefreshState = RefreshState.INITIAL
+    private var refreshState: RefreshState = RefreshState.INITIAL
         set(state) {
             field = state
             Log.d("REFRESH_STATE", field.name)
@@ -53,6 +53,7 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
                 refreshHeaderView = DefaultRefreshHeader(context)
                 return
             }
+            typedArray.recycle()
             val headerClass: Class<out View> = Class.forName(headerClassName) as Class<out View>
             val constructor: Constructor<out View> = headerClass.getConstructor(Context::class.java)
             refreshHeaderView = constructor.newInstance(context)
@@ -63,6 +64,7 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        Log.d("TAG","onMeasure")
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         val headerWidthMeasureSpec = MeasureSpec.makeMeasureSpec(measuredWidth - paddingLeft - paddingRight, MeasureSpec.EXACTLY)
         val headerheightMeasureSpec = MeasureSpec.makeMeasureSpec(measuredHeight - paddingTop - paddingBottom, MeasureSpec.AT_MOST)
@@ -79,7 +81,9 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
         }
     }
 
+
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        Log.d("TAG","${refreshHeaderView.measuredHeight}")
         refreshHeaderView.layout(
                 0,
                 -refreshHeaderView.measuredHeight,
@@ -97,7 +101,6 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val maxScrollHeight = refreshHeaderView.height + getOverScrollHeight()
         val refreshHeader = refreshHeaderView as IRefreshHeader
-//        Log.d("onTouch","${event.actionMasked}  ${refreshState.name}")
         when (event.actionMasked) {
 
             MotionEvent.ACTION_DOWN -> {
@@ -110,7 +113,6 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
                 } else if (Math.abs(scrollY) >= refreshHeaderView.height) {
                     refreshState = RefreshState.HOLDING
                 }
-                return true
             }
 
             MotionEvent.ACTION_MOVE -> {
@@ -132,6 +134,7 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
                 } else if (refreshState == RefreshState.PULLING && Math.abs(destY) >= refreshHeaderView.height) {
                     refreshState = RefreshState.HOLDING
                 }
+                refreshHeader.onMove(destY,refreshHeaderView.height)
                 lastY = event.y.toInt()
             }
 
@@ -151,7 +154,7 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
 
 
         }
-        return false
+        return true
     }
 
 
@@ -162,8 +165,8 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
 
     fun finishRefresh() {
         if (!mScroller.isFinished) mScroller.abortAnimation()
-        (refreshHeaderView as IRefreshHeader).onRefreshFinish()
-        smoothScrollBack()
+        val refreshFinishedDuration = (refreshHeaderView as IRefreshHeader).onRefreshFinish()
+        postDelayed({ smoothScrollBack() }, refreshFinishedDuration)
     }
 
     private fun getOverScrollHeight() = refreshHeaderView.height * 0.75
@@ -171,14 +174,13 @@ class Pull2RefreshLayout : ViewGroup, NestedScrollingParent {
 
     private fun smoothScrollBack() {
         refreshState = RefreshState.RETURNING
-        smoothScrollTo(0, 800)
+        smoothScrollTo(0, 300)
     }
 
     override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
         super.onScrollChanged(l, t, oldl, oldt)
         if (t > 0) return
         val refreshHeader = refreshHeaderView as IRefreshHeader
-        refreshHeader.onMove(t, refreshHeaderView.height)
         if (t == -refreshHeaderView.height && refreshState == RefreshState.RELEASE_BACK) {
             doRefresh()
         } else if (t == 0 && (refreshState == RefreshState.RETURNING)) {

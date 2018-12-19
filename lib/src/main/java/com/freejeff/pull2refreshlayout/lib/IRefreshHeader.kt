@@ -4,11 +4,11 @@ interface IRefreshHeader {
 
     fun onPrepare()
 
-    fun onMove(currentY:Int,headerHeight:Int)
+    fun onMove(currentY: Int, headerHeight: Int)
 
     fun onRefresh()
 
-    fun onRefreshFinish()
+    fun onRefreshFinish(): Long
 
     fun onReset()
 
